@@ -63,7 +63,7 @@ import md5 from 'blueimp-md5'
 
 import { settingStore, userStore } from '@/stores'
 import { getAllFileEntries, eventBus, isDirectoryReadingSupported } from '@/utils'
-import { UploadFile, validMediaMimeTypes, events } from '@/config'
+import { UploadFile, validMediaMimeTypes } from '@/config'
 import { upload } from '@/services'
 
 import UploadItem from '@/components/ui/upload/upload-item.vue'

@@ -8,10 +8,10 @@
     </h1>
 
     <main v-if="artist.info">
-      <artist-thumbnail :entity="artist"/>
+      <ArtistThumbnail :entity="artist"/>
 
       <template v-if="artist.info">
-        <div class="bio" v-if="artist.info.bio && artist.info.bio.summary">
+        <div class="bio" v-if="artist.info.bio?.summary">
           <div class="summary" v-if="showSummary" v-html="artist.info.bio.summary"></div>
           <div class="full" v-if="showFull" v-html="artist.info.bio.full"></div>
 
@@ -27,54 +27,29 @@
   </article>
 </template>
 
-<script lang="ts">
-import Vue, { PropOptions } from 'vue'
+<script lang="ts" setup>
+import { computed, defineAsyncComponent, defineProps, Prop, ref, watch } from 'vue'
 import { playback } from '@/services'
 
-export default Vue.extend({
-  props: {
-    artist: Object as PropOptions<Artist>,
+const ArtistThumbnail = defineAsyncComponent(() => import('@/components/ui/album-artist-thumbnail.vue'))
 
-    mode: {
-      type: String,
-      default: 'sidebar',
-      validator: value => ['sidebar', 'full'].includes(value)
-    }
-  },
+const artist = defineProps<{ artist: Artist }>().artist
 
-  components: {
-    ArtistThumbnail: () => import('@/components/ui/album-artist-thumbnail.vue')
-  },
+const mode = defineProps({
+  mode: {
+    type: String,
+    default: 'sidebar'
+  } as Prop<'sidebar' | 'full'>
+}).mode
 
-  data: () => ({
-    showingFullBio: false
-  }),
+const showingFullBio = ref(false)
 
-  watch: {
-    /**
-     * Whenever a new artist is loaded into this component, we reset the "full bio" state.
-     */
-    artist (): void {
-      this.showingFullBio = false
-    }
-  },
+watch(artist, () => (showingFullBio.value = false))
 
-  computed: {
-    showSummary (): boolean {
-      return this.mode !== 'full' && !this.showingFullBio
-    },
+const showSummary = computed(() => mode !== 'full' && !showingFullBio)
+const showFull = computed(() => !showSummary.value)
 
-    showFull (): boolean {
-      return this.mode === 'full' || this.showingFullBio
-    }
-  },
-
-  methods: {
-    shuffleAll (): void {
-      playback.playAllByArtist(this.artist, false)
-    }
-  }
-})
+const shuffleAll = () => playback.playAllByArtist(artist, false)
 </script>
 
 <style lang="scss">

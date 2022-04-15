@@ -14,7 +14,7 @@
           <a class="artist" v-if="isNormalArtist" :href="`#!/artist/${album.artist.id}`">{{ album.artist.name }}</a>
           <span class="nope" v-else>{{ album.artist.name }}</span>
           •
-          {{ album.songs.length | pluralize('song') }}
+          {{pluralize(album.songs.length, 'song') }}
           •
           {{ fmtLength }}
 

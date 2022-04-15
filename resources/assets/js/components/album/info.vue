@@ -8,11 +8,11 @@
     </h1>
 
     <main>
-      <album-thumbnail :entity="album"/>
+      <AlbumThumbnail :entity="album"/>
 
       <template v-if="album.info">
-        <div class="wiki" v-if="album.info.wiki && album.info.wiki.summary">
-          <div class="summary" v-if="showSummary" v-html="album.info.wiki.summary"></div>
+        <div class="wiki" v-if="album.info.wiki?.summary">
+          <div class="summary" v-if="showSummary" v-html="album.info.wiki?.summary"></div>
           <div class="full" v-if="showFull" v-html="album.info.wiki.full"></div>
 
           <button class="more" v-if="showSummary" @click.prevent="showingFullWiki = true" data-test="more-btn">
@@ -20,7 +20,7 @@
           </button>
         </div>
 
-        <track-list :album="album" v-if="album.info.tracks && album.info.tracks.length" data-test="album-info-tracks"/>
+        <TrackList :album="album" v-if="album.info.tracks?.length" data-test="album-info-tracks"/>
 
         <footer>Data &copy; <a target="_blank" rel="noopener" :href="album.info.url">Last.fm</a></footer>
       </template>
@@ -29,60 +29,34 @@
   </article>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import { sharedStore } from '@/stores'
-import { playback, auth } from '@/services'
-import Vue, { PropOptions } from 'vue'
+import { auth, playback } from '@/services'
+import { computed, defineAsyncComponent, defineProps, Prop, ref, watch } from 'vue'
 
-export default Vue.extend({
-  props: {
-    album: Object as PropOptions<Album>,
-    mode: {
-      type: String,
-      default: 'sidebar',
-      validator: value => ['sidebar', 'full'].includes(value)
-    }
-  },
+const TrackList = defineAsyncComponent(() => import('./track-list.vue'))
+const AlbumThumbnail = defineAsyncComponent(() => import('@/components/ui/album-artist-thumbnail.vue'))
 
-  components: {
-    TrackList: () => import('./track-list.vue'),
-    AlbumThumbnail: () => import('@/components/ui/album-artist-thumbnail.vue')
-  },
+const album = defineProps<{ album: Album }>().album
 
-  data: () => ({
-    showingFullWiki: false,
-    useiTunes: sharedStore.state.useiTunes
-  }),
+const mode = defineProps({
+  mode: {
+    default: 'sidebar',
+    required: true
+  } as Prop<'sidebar' | 'full'>
+}).mode
 
-  watch: {
-    /**
-     * Whenever a new album is loaded into this component, we reset the "full wiki" state.
-     */
-    album (): void {
-      this.showingFullWiki = false
-    }
-  },
+const showingFullWiki = ref(false)
 
-  computed: {
-    showSummary (): boolean {
-      return this.mode !== 'full' && !this.showingFullWiki
-    },
+/**
+ * Whenever a new album is loaded into this component, we reset the "full wiki" state.
+ */
+watch(album, () => (showingFullWiki.value = false))
 
-    showFull (): boolean {
-      return this.mode === 'full' || this.showingFullWiki
-    },
+const showSummary = computed(() => mode !== 'full' && !showingFullWiki.value)
+const showFull = computed(() => !showSummary.value)
 
-    iTunesUrl (): string {
-      return `${window.BASE_URL}itunes/album/${this.album.id}&api_token=${auth.getToken()}`
-    }
-  },
-
-  methods: {
-    shuffleAll (): void {
-      playback.playAllInAlbum(this.album)
-    }
-  }
-})
+const shuffleAll = () => playback.playAllInAlbum(album)
 </script>
 
 <style lang="scss">

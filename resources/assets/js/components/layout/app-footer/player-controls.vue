@@ -18,7 +18,7 @@
         tabindex="0"
         title="Play or resume"
         data-testid="play-btn"
-        v-if="shouldDisplayPlayButton"
+        v-if="shouldShowPlayButton"
       >
         <i class="fa fa-play"></i>
       </span>
@@ -46,34 +46,19 @@
   </div>
 </template>
 
-<script lang="ts">
-import Vue, { PropOptions } from 'vue'
+<script lang="ts" setup>
+import { computed, defineProps } from 'vue'
 import { playback } from '@/services'
 import { getDefaultCover } from '@/utils'
 
-export default Vue.extend({
-  props: {
-    song: {
-      type: Object
-    } as PropOptions<Song>
-  },
+const song = defineProps<{ song: Song }>().song
 
-  computed: {
-    cover (): string {
-      return this.song && this.song.album.cover ? this.song.album.cover : getDefaultCover()
-    },
+const cover = computed(() => song && song.album.cover ? song.album.cover : getDefaultCover())
+const shouldShowPlayButton = computed(() => !song || song.playbackState !== 'Playing')
 
-    shouldDisplayPlayButton (): boolean {
-      return !this.song || (this.song && this.song.playbackState !== 'Playing')
-    }
-  },
-
-  methods: {
-    playPrev: async () => await playback.playPrev(),
-    playNext: async () => await playback.playNext(),
-    toggle: async () => await playback.toggle()
-  }
-})
+const playPrev = async () => await playback.playPrev()
+const playNext = async () => await playback.playNext()
+const toggle = async () => await playback.toggle()
 </script>
 
 <style lang="scss" scoped>
@@ -154,7 +139,7 @@ export default Vue.extend({
       width: 100%;
       top: 0;
       left: 0;
-      background: linear-gradient(135deg, rgba(235,241,246,0) 0%,rgba(255,255,255,.3) 41%,rgba(255,255,255,0) 41%);
+      background: linear-gradient(135deg, rgba(235, 241, 246, 0) 0%, rgba(255, 255, 255, .3) 41%, rgba(255, 255, 255, 0) 41%);
     }
   }
 

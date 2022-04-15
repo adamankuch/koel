@@ -12,7 +12,7 @@
     @dblclick="shuffle"
   >
     <span class="thumbnail-wrapper">
-      <album-thumbnail :entity="album" />
+      <AlbumThumbnail :entity="album"/>
     </span>
 
     <footer>
@@ -28,11 +28,11 @@
       </div>
       <p class="meta">
         <span class="left">
-          {{ album.songs.length | pluralize('song') }}
+          {{ pluralize(album.songs.length, 'song') }}
           •
           {{ fmtLength }}
           •
-          {{ album.playCount | pluralize('play') }}
+          {{ pluralize(album.playCount, 'play') }}
         </span>
         <span class="right">
           <a
@@ -60,57 +60,32 @@
   </article>
 </template>
 
-<script lang="ts">
-import mixins from 'vue-typed-mixins'
+<script lang="ts" setup>
+import { computed, defineAsyncComponent, Prop, reactive } from 'vue'
+import { useAlbumAttributes } from '@/composables'
 import { eventBus, pluralize, startDragging } from '@/utils'
 import { artistStore, sharedStore } from '@/stores'
-import { playback, download } from '@/services'
-import albumAttributes from '@/mixins/album-attributes.ts'
-import { PropOptions } from 'vue'
+import { download as downloadService, playback } from '@/services'
 
-export default mixins(albumAttributes).extend({
-  props: {
-    layout: {
-      type: String,
-      default: 'full'
-    } as PropOptions<ArtistAlbumCardLayout>
-  },
-
-  components: {
-    AlbumThumbnail: () => import('@/components/ui/album-artist-thumbnail.vue')
-  },
-
-  filters: { pluralize },
-
-  data: () => ({
-    sharedState: sharedStore.state
-  }),
-
-  computed: {
-    isNormalArtist (): boolean {
-      return !artistStore.isVariousArtists(this.album.artist) &&
-        !artistStore.isUnknownArtist(this.album.artist)
-    }
-  },
-
-  methods: {
-    shuffle (): void {
-      playback.playAllInAlbum(this.album, true /* shuffled */)
-    },
-
-    download (): void {
-      download.fromAlbum(this.album)
-    },
-
-    dragStart (event: DragEvent): void {
-      startDragging(event, this.album, 'Album')
-    },
-
-    requestContextMenu (e: MouseEvent): void {
-      eventBus.emit('ALBUM_CONTEXT_MENU_REQUESTED', e, this.album)
-    }
-  }
+const props = defineProps({
+  layout: {
+    type: String,
+    default: 'full'
+  } as Prop<ArtistAlbumCardLayout>
 })
+
+const AlbumThumbnail = defineAsyncComponent(() => import('@/components/ui/album-artist-thumbnail.vue'))
+const { album, length, fmtLength } = useAlbumAttributes()
+const sharedState = reactive(sharedStore.state)
+
+const isNormalArtist = computed(() => {
+  return !artistStore.isVariousArtists(album.artist) && !artistStore.isUnknownArtist(album.artist)
+})
+
+const shuffle = () => playback.playAllInAlbum(album, true /* shuffled */)
+const download = () => downloadService.fromAlbum(album)
+const dragStart = (event: DragEvent) => startDragging(event, album, 'Album')
+const requestContextMenu = (event: MouseEvent) => eventBus.emit('ALBUM_CONTEXT_MENU_REQUESTED', event, album)
 </script>
 
 <style lang="scss">

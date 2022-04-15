@@ -45,69 +45,39 @@
   </div>
 </template>
 
-<script lang="ts">
-import Vue, { PropOptions } from 'vue'
+<script lang="ts" setup>
+import { defineAsyncComponent, defineProps, reactive, ref } from 'vue'
 import { socket } from '@/services'
-import { eventBus, isAudioContextSupported } from '@/utils'
+import { eventBus, isAudioContextSupported as useEqualizer } from '@/utils'
 import { favoriteStore, preferenceStore, sharedStore, songStore } from '@/stores'
 import isMobile from 'ismobilejs'
 
-export default Vue.extend({
-  props: {
-    song: {
-      type: Object
-    } as PropOptions<Song>
-  },
+const Equalizer = defineAsyncComponent(() => import('@/components/ui/equalizer.vue'))
+const SoundBar = defineAsyncComponent(() => import('@/components/ui/sound-bar.vue'))
+const Volume = defineAsyncComponent(() => import('@/components/ui/volume.vue'))
+const LikeButton = defineAsyncComponent(() => import('@/components/song/like-button.vue'))
+const RepeatModeSwitch = defineAsyncComponent(() => import('@/components/ui/repeat-mode-switch.vue'))
 
-  components: {
-    Equalizer: () => import('@/components/ui/equalizer.vue'),
-    SoundBar: () => import('@/components/ui/sound-bar.vue'),
-    Volume: () => import('@/components/ui/volume.vue'),
-    LikeButton: () => import('@/components/song/like-button.vue'),
-    RepeatModeSwitch: () => import('@/components/ui/repeat-mode-switch.vue')
-  },
+const song = defineProps<{ song: Song }>().song
 
-  data: () => ({
-    preferences: preferenceStore.state,
-    showEqualizer: false,
-    sharedState: sharedStore.state,
-    useEqualizer: isAudioContextSupported,
-    viewingQueue: false
-  }),
+const sharedState = reactive(sharedStore.state)
+const preferences = reactive(preferenceStore.state)
+const showEqualizer = ref(false)
+const viewingQueue = ref(false)
 
-  methods: {
-    like (): void {
-      if (this.song.id) {
-        favoriteStore.toggleOne(this.song)
-        socket.broadcast('SOCKET_SONG', songStore.generateDataToBroadcast(this.song))
-      }
-    },
-
-    toggleExtraPanel (): void {
-      preferenceStore.showExtraPanel = !this.preferences.showExtraPanel
-    },
-
-    toggleEqualizer (): void {
-      this.showEqualizer = !this.showEqualizer
-    },
-
-    closeEqualizer (): void {
-      this.showEqualizer = false
-    },
-
-    toggleVisualizer: (): void => {
-      if (!isMobile.any) {
-        eventBus.emit('TOGGLE_VISUALIZER')
-      }
-    }
-  },
-
-  created (): void {
-    eventBus.on('LOAD_MAIN_CONTENT', (view: MainViewName): void => {
-      this.viewingQueue = view === 'Queue'
-    })
+const like = () => {
+  if (song.id) {
+    favoriteStore.toggleOne(song)
+    socket.broadcast('SOCKET_SONG', songStore.generateDataToBroadcast(song))
   }
-})
+}
+
+const toggleExtraPanel = () => (preferenceStore.showExtraPanel = !preferences.showExtraPanel)
+const toggleEqualizer = () => (showEqualizer.value = !showEqualizer.value)
+const closeEqualizer = () => showEqualizer.value = false
+const toggleVisualizer = () => isMobile.any || eventBus.emit('TOGGLE_VISUALIZER')
+
+eventBus.on('LOAD_MAIN_CONTENT', (view: MainViewName) => (viewingQueue.value = view === 'Queue')
 </script>
 
 <style lang="scss" scoped>

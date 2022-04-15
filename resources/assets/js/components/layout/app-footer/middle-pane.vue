@@ -16,16 +16,10 @@
   </div>
 </template>
 
-<script lang="ts">
-import Vue, { PropOptions } from 'vue'
+<script lang="ts" setup>
+import { defineProps } from 'vue'
 
-export default Vue.extend({
-  props: {
-    song: {
-      type: Object
-    } as PropOptions<Song>
-  }
-})
+const song = defineProps<{ song: Song }>().song
 </script>
 
 <style lang="scss">/* no scoping here because we're overriding some plyr classes */

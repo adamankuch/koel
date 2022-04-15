@@ -6,7 +6,7 @@ import { favoriteStore, playlistStore, queueStore } from '@/stores'
  * Note that for some components, some methods here may not be applicable, or overridden,
  * for example close() and open().
  */
-export const useSongMenuMethods = (close: Function) => {
+export const useSongMenuMethods = (close: (...args: unknown[]) => unknown) => {
   const props = defineProps<{ songs: Song[] }>()
 
   const queueSongsAfterCurrent = () => {
